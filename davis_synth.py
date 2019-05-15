@@ -5,10 +5,12 @@ import skimage.io as io
 import numpy as np
 import os
 import argparse
-
+import shutil
 import utils
+from tqdm import tqdm
 
-np.random.seed(0)
+
+np.random.seed(2)
 
 if __name__ == "__main__":
 
@@ -30,12 +32,17 @@ if __name__ == "__main__":
 
     all_sets = [f.name for f in ann_path.iterdir()]
 
-    for i in range(args.num):
+    for i in tqdm(range(args.num)):
         v_src, v_tar = np.random.choice(all_sets, size=2, replace=False)
         this_write_dir = Path(f"./data/davis_tempered/vid/{i}")
-        this_write_txt_file = Path("./data/davis_tempered/gt/{i}.txt")
+        this_write_txt_file = Path(f"./data/davis_tempered/gt/{i}.txt")
 
-        this_write_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            this_write_dir.mkdir(parents=True)
+        except Exception as e:
+            shutil.rmtree(str(this_write_dir))
+            this_write_dir.mkdir(parents=True)
+
         this_write_txt_file.parent.mkdir(parents=True, exist_ok=True)
 
         gt_str = ""
@@ -61,7 +68,7 @@ if __name__ == "__main__":
             im_s = io.imread(src[0])
             im_mask = io.imread(src[1], as_gray=True)
 
-            im_mani = utils.splice(im_t, im_s, im_mask)
+            im_mani = utils.splice(im_t, im_s, im_mask, do_blend=False)
 
             fname = this_write_dir / f"{counter}.jpg"
             io.imsave(fname, im_mani)

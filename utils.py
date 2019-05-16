@@ -10,6 +10,7 @@ from builtins import range
 import scipy.sparse
 import pyamg
 
+from poisson_edit import poisson_edit
 
 def splice(img_target, img_source, img_mask, do_blend=False):
 
@@ -19,14 +20,17 @@ def splice(img_target, img_source, img_mask, do_blend=False):
         )
         img_target = skimage.img_as_ubyte(img_target)
 
-    if len(img_mask.shape) < 3:
-        img_mask = img_mask[..., None]
-
     if do_blend:
-        img_mani = blend(
-            img_target, img_source, img_mask
+        # img_mani = blend(
+        #     img_target, img_source, img_mask
+        # )
+        img_mani = poisson_edit(
+            img_source, img_target, img_mask, offset=(0, 0)
         )
         return img_mani
+
+    if len(img_mask.shape) < 3:
+        img_mask = img_mask[..., None]
 
     img_mask = (img_mask > 0)
     if img_mask.dtype != np.float:

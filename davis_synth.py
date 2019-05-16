@@ -68,7 +68,7 @@ if __name__ == "__main__":
             im_s = io.imread(src[0])
             im_mask = io.imread(src[1], as_gray=True)
 
-            im_mani = utils.splice(im_t, im_s, im_mask, do_blend=False)
+            im_mani = utils.splice(im_t, im_s, im_mask, do_blend=True)
 
             fname = this_write_dir / f"{counter}.jpg"
             io.imsave(fname, im_mani)

@@ -108,11 +108,14 @@ if __name__ == "__main__":
         X2 = X2.transpose(2, 0, 1)
 
 
-        Colors1 = np.empty(X1.shape, dtype=object)
-        Colors2 = np.empty(X2.shape, dtype=object)
+        Colors1 = np.zeros(X1.shape+(4,), dtype=np.float)
+        Colors2 = np.zeros(X2.shape+(4,), dtype=np.float)
 
-        Colors1[X1] = 'blue'
-        Colors2[X2] = 'red'
+        #Colors1[:, :] = (0, 0, 0, 0)
+	#Colors2[:, :] = (0, 0, 0, 0)
+        
+        Colors1[X1] = (1, 0, 0, 0.8)
+        Colors2[X2] = (0, 0, 1, 0.5)
 
         print(X1.shape)
 
@@ -120,18 +123,23 @@ if __name__ == "__main__":
         fig = plt.figure()
         ax = fig.gca(projection='3d')
 
+        scale_x, scale_y, scale_z = (0.6, 1.7, 0.6)
+        ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([scale_x, scale_y, scale_z, 1]))
+
         ax.voxels(X1, facecolors=Colors1)
         ax.voxels(X2, facecolors=Colors2)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_zticks([])
         # ax.scatter(*X1.nonzero())
         # ax.scatter(*X2.nonzero())
         # ax.set_xlabel("x")
         # ax.set_ylabel("T")
         # ax.set_zlabel("y")
 
-        # ax.set_xticks([])
-        # ax.set_yticks([])
-        # ax.set_zticks([])
-
-        plt.show()
+        # plt.show()
+        ax.view_init(elev=66, azim=-40)
+        plt.savefig("./data/tmp.png")
         plt.close('all')
         break

@@ -53,7 +53,7 @@ if __name__ == "__main__":
         v_tar_folder = im_root / v_tar
         mask_folder = ann_path / v_src
 
-        offset = 0
+        offset = 0  # time
 
         tar_images = list(sorted(v_tar_folder.iterdir()))
         src_images = list(
@@ -70,7 +70,7 @@ if __name__ == "__main__":
             im_s = io.imread(src[0])
             im_mask = io.imread(src[1], as_gray=True)
 
-            im_mani = utils.splice(im_t, im_s, im_mask, do_blend=True)
+            im_mani = utils.splice(im_t, im_s, im_mask, do_blend=False)
 
             fname = this_write_dir / f"{counter}.jpg"
             io.imsave(fname, im_mani)

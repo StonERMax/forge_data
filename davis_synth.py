@@ -10,17 +10,19 @@ import utils
 from tqdm import tqdm
 
 
-np.random.seed(2)
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Arguemnt for DAVIS synthetic dataset")
     parser.add_argument(
         "--num", "-n", type=int, default=2, help="total manipulated video"
     )
+    parser.add_argument("--seed", "-s", type=int, defaut=0,
+                        help="random seed")
 
     args = parser.parse_args()
     print(args)
+
+    np.random.seed(args.seed)
 
     HOME = Path(os.environ["HOME"])
     root = HOME / "dataset" / "DAVIS"

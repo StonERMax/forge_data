@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num", "-n", type=int, default=2, help="total manipulated video"
     )
-    parser.add_argument("--seed", "-s", type=int, defaut=0,
+    parser.add_argument("--seed", "-s", type=int, default=0,
                         help="random seed")
 
     args = parser.parse_args()

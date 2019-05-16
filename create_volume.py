@@ -4,7 +4,7 @@ from matplotlib import cm
 
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
+# import seaborn as sns
 import argparse
 from tqdm import tqdm
 from mpl_toolkits.mplot3d import Axes3D
@@ -124,15 +124,13 @@ if __name__ == "__main__":
         ax.voxels(X2, facecolors=Colors2)
         # ax.scatter(*X1.nonzero())
         # ax.scatter(*X2.nonzero())
-        ax.set_xlabel("x")
-        ax.set_ylabel("T")
-        ax.set_zlabel("y")
+        # ax.set_xlabel("x")
+        # ax.set_ylabel("T")
+        # ax.set_zlabel("y")
 
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
-
-
+        # ax.set_xticks([])
+        # ax.set_yticks([])
+        # ax.set_zticks([])
 
         plt.show()
         plt.close('all')

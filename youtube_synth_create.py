@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 from pathlib import Path
 import skimage.io as io
@@ -12,7 +11,7 @@ import pickle
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Arguemnt for SegtrackV2 synthetic dataset")
+    parser = argparse.ArgumentParser(description="Arguemnt for Youtube synthetic dataset")
     parser.add_argument(
         "--num", "-n", type=int, default=1, help="total manipulated video"
     )
@@ -27,11 +26,10 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
 
     HOME = Path(os.environ["HOME"])
-    root = HOME / "dataset" / "SegTrackv2"
+    root = HOME / "dataset" / "youtube_masks"
 
-    ann_path = root / "GroundTruth"
-
-    im_root = root / "JPEGImages"
+    ann_path = root
+    im_root = root
 
     all_sets = [f.name for f in ann_path.iterdir()]
 
@@ -41,10 +39,33 @@ if __name__ == "__main__":
 
         print(v_src)
 
-        this_write_dir = Path(f"./data/SegTrackv2_tempered/vid/{v_tar}")
-        this_write_data_file = Path(f"./data/SegTrackv2_tempered/gt/{v_tar}.pkl")
 
-        this_write_dir_gt_mask = Path(f"./data/SegTrackv2_tempered/gt_mask/{v_tar}")
+        gt_str = ""
+
+        tmp = np.random.choice(list((im_root / v_src / "data").iterdir()))
+        _num = tmp.stem
+
+
+        v_src_folder = im_root / v_src/ "data" / _num / "shots" / "001" / "images"
+        v_tar_folder = v_src_folder
+        mask_folder = im_root / v_src / "data" / _num / "shots" / "001" / "labels"
+
+        tar_images = sorted(v_tar_folder.iterdir())
+        src_images = list(
+            zip(sorted(v_src_folder.iterdir()), sorted(mask_folder.iterdir()))
+        )
+
+        offset = np.random.randint(0, int(len(tar_images)/2))
+        if offset > 0:
+            src_images = [(None, None)] * offset + src_images
+            # first offset frame has no source
+
+        tmp = v_src_folder.parts
+        _flg = tmp[-6] + "_" + tmp[-4]
+        this_write_dir = Path(f"./data/youtube_tempered/vid/{_flg}")
+        this_write_data_file = Path(f"./data/youtube_tempered/gt/{_flg}.pkl")
+
+        this_write_dir_gt_mask = Path(f"./data/youtube_tempered/gt_mask/{_flg}")
 
         Data_dict = {}  # Data to save gt
 
@@ -63,28 +84,7 @@ if __name__ == "__main__":
 
         this_write_data_file.parent.mkdir(parents=True, exist_ok=True)
 
-        gt_str = ""
 
-        v_src_folder = im_root / v_src
-        v_tar_folder = im_root / v_tar
-        mask_folder = ann_path / v_src
-
-        mask_files = sorted(mask_folder.iterdir())
-
-        if not any([flg.suffix == '.png' for flg in mask_files]):
-            fldr = [x for x in mask_files if x.is_dir()]
-            choice = np.random.choice(fldr)
-            mask_folder = choice
-
-        tar_images = sorted(v_tar_folder.iterdir())
-        src_images = list(
-            zip(sorted(v_src_folder.iterdir()), sorted(mask_folder.iterdir()))
-        )
-
-        offset = np.random.randint(0, int(len(tar_images)/2))
-        if offset > 0:
-            src_images = [(None, None)] * offset + src_images
-            # first offset frame has no source
 
         all_images = zip(tar_images, src_images)
 
@@ -101,9 +101,7 @@ if __name__ == "__main__":
                 im_mask = io.imread(src[1], as_gray=True)
                 im_mask = skimage.img_as_float(im_mask)
 
-                if not np.any(im_mask > 0):
-                    src = (None, None)
-                    im_mask, im_mask_new = None, None
+                im_mask[im_mask > 0] = 1
 
             if src[0] is not None:
                 # Convert mask and masked image
@@ -161,3 +159,8 @@ if __name__ == "__main__":
 
         with open(this_write_data_file, "wb") as fp:
             pickle.dump(Data_dict, fp)
+
+        try:
+            del choice
+        except NameError:
+            pass

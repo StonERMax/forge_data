@@ -147,10 +147,10 @@ if __name__ == "__main__":
                 im_mani = im_t
                 im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
 
-            fname = this_write_dir / f"{counter}.jpg"
+            fname = this_write_dir / f"{counter}.png"
             io.imsave(fname, im_mani)
 
-            fname2 = this_write_dir_gt_mask / f"{counter}.png"
+            fname2 = this_write_dir_gt_mask / f"{counter}.jpg"
             io.imsave(fname2, im_s_new)
 
             Data_dict[fname] = {

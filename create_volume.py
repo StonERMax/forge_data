@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 X1[i - offset] = mask_orig
 
 
-        ind = np.random.choice(T, size=int(30), replace=False)
+        ind = np.random.choice(T, size=min(T, 60), replace=False)
         ind.sort()
 
         X1 = X1[ind]
@@ -136,4 +136,4 @@ if __name__ == "__main__":
 
         plt.savefig("{}/{}.png".format(_dir, each_pkl.stem))
         plt.close("all")
-        break
+        # break

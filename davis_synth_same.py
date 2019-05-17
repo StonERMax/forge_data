@@ -67,17 +67,18 @@ if __name__ == "__main__":
         v_tar_folder = im_root / v_tar
         mask_folder = ann_path / v_src
 
-        offset = args.offset # time
-
-        tar_images = list(sorted(v_tar_folder.iterdir()))
+        tar_images = sorted(v_tar_folder.iterdir())
         src_images = list(
             zip(sorted(v_src_folder.iterdir()), sorted(mask_folder.iterdir()))
         )
 
+        offset = np.random.randint(0, int(len(tar_images)/2))
         if offset > 0:
             src_images = [(None, None)] * offset + src_images
 
         all_images = zip(tar_images, src_images)
+
+        prev_ind = -1
 
         for counter, (tar, src) in enumerate(all_images):
             # print(f"{tar}")
@@ -85,14 +86,21 @@ if __name__ == "__main__":
 
             if src[0] is None:
                 im_s = im_t.copy()
-                im_mask = np.zeros(im_s.shape[:2], dtype=np.uint8)
+                im_mask = None
+                im_mask_new = None
             else:
                 im_s = io.imread(src[0])
                 im_mask = io.imread(src[1], as_gray=True)
 
             if src[0] is not None:
                 # Convert mask and masked image
-                max_bb, mask_orig_bb = utils.get_max_bb(im_mask)
+                max_bb, mask_orig_bb, ind_bb = utils.get_max_bb(im_mask)
+
+                if prev_ind != -1 and \
+                        not utils.check_same_side(ind_bb, prev_ind):
+                    break
+                else:
+                    prev_ind = ind_bb
 
                 translate, scale, centroid =  utils.transform_mask(
                             max_bb, mask_orig_bb, im_mask
@@ -111,10 +119,8 @@ if __name__ == "__main__":
                 im_mani = utils.splice(im_t, im_s_new, im_mask_new, do_blend=False)
             else:
                 im_mani = im_t
-                im_s_new = im_mask
+                im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
                 # im_mask_new = im_mask
-                im_mask = None
-                im_mask_new = None
 
             fname = this_write_dir / f"{counter}.jpg"
             io.imsave(fname, im_mani)

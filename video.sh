@@ -6,8 +6,17 @@ fi
 
 echo Frame Rate: $rate
 
-ffmpeg -y -i "./data/davis_tempered/vid/0/%d.jpg" -framerate $1 \
-        ./data/davis_tempered/video/0_tempered.mp4
+v_dir="./data/davis_tempered/vid"
+gt_dir="./data/davis_tempered/gt_mask"
 
-ffmpeg -y -i "./data/davis_tempered/gt_mask/0/%d.png" -framerate $1 \
-        ./data/davis_tempered/video/0_tempered_gt.mp4
+for V in $(ls $v_dir)
+do
+        write_dir="./data/davis_tempered/video/${V}"
+        mkdir -p $write_dir
+        ffmpeg -y -i "${v_dir}/${V}/%d.jpg" -framerate $rate \
+                ${write_dir}/${V}_tempered.mp4
+
+        ffmpeg -y -i "${gt_dir}/${V}/%d.png" -framerate $rate \
+                ${write_dir}/${V}_tempered_gt.mp4
+done
+

@@ -38,6 +38,18 @@ def splice(img_target, img_source, img_mask, do_blend=False):
 
     return img_mani
 
+def check_same_side(ind, prev):
+    left = (0, 3, 5)
+    top = (0, 1, 2)
+    bottom = (5, 6, 7)
+    right = (2, 4, 7)
+
+    Pos = [left, right, top, bottom]
+
+    for _pos in Pos:
+        if np.any(ind in _pos and prev in _pos):
+            return True
+    return False
 
 
 def get_max_bb(mask):
@@ -60,9 +72,12 @@ def get_max_bb(mask):
         (x2, y2, w, h)
     ]
 
-    max_bb = max(BBs, key = lambda x: min(wh_bb(x)))
+    key_BB = [min(wh_bb(x)) for x in BBs]
 
-    return max_bb, mask_orig_bb
+    max_ind = np.argmax(key_BB)
+    max_bb = BBs[max_ind]
+
+    return max_bb, mask_orig_bb, max_ind
 
 
 def transform_mask(max_bb, mask_bb, mask):

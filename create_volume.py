@@ -130,9 +130,10 @@ if __name__ == "__main__":
         # ax.set_xlabel("x")
         ax.view_init(elev=66, azim=-40)
         # plt.show()
-        _dir = "./data/davis_tempered/fig"
+        # _dir = "./data/davis_tempered/fig"
+        _dir = '/'.join(root.parts[:-1]) + '/fig'
         if not os.path.exists(_dir):
-            os.mkdir("_dir")
+            os.mkdir(_dir)
 
         plt.savefig("{}/{}.png".format(_dir, each_pkl.stem))
         plt.close("all")

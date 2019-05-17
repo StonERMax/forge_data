@@ -12,7 +12,7 @@ import pickle
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Arguemnt for DAVIS synthetic dataset")
+    parser = argparse.ArgumentParser(description="Arguemnt for SegtrackV2 synthetic dataset")
     parser.add_argument(
         "--num", "-n", type=int, default=1, help="total manipulated video"
     )
@@ -27,12 +27,11 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
 
     HOME = Path(os.environ["HOME"])
-    root = HOME / "dataset" / "DAVIS"
+    root = HOME / "dataset" / "SegTrackv2"
 
-    ann_path = root / "Annotations" / "480p"
-    im_sets_root = root / "ImageSets" / "2017"
+    ann_path = root / "GroundTruth"
 
-    im_root = root / "JPEGImages" / "480p"
+    im_root = root / "JPEGImages"
 
     all_sets = [f.name for f in ann_path.iterdir()]
 
@@ -42,10 +41,10 @@ if __name__ == "__main__":
 
         print(v_src)
 
-        this_write_dir = Path(f"./data/davis_tempered/vid/{v_tar}")
-        this_write_data_file = Path(f"./data/davis_tempered/gt/{v_tar}.pkl")
+        this_write_dir = Path(f"./data/SegTrackv2_tempered/vid/{v_tar}")
+        this_write_data_file = Path(f"./data/SegTrackv2_tempered/gt/{v_tar}.pkl")
 
-        this_write_dir_gt_mask = Path(f"./data/davis_tempered/gt_mask/{v_tar}")
+        this_write_dir_gt_mask = Path(f"./data/SegTrackv2_tempered/gt_mask/{v_tar}")
 
         Data_dict = {}  # Data to save gt
 
@@ -69,6 +68,13 @@ if __name__ == "__main__":
         v_src_folder = im_root / v_src
         v_tar_folder = im_root / v_tar
         mask_folder = ann_path / v_src
+
+        mask_files = sorted(mask_folder.iterdir())
+
+        if not any([flg.suffix == '.png' for flg in mask_files]):
+            fldr = [x for x in mask_files if x.is_dir()]
+            choice = np.random.choice(fldr)
+            mask_folder = choice
 
         tar_images = sorted(v_tar_folder.iterdir())
         src_images = list(
@@ -95,18 +101,9 @@ if __name__ == "__main__":
                 im_mask = io.imread(src[1], as_gray=True)
                 im_mask = skimage.img_as_float(im_mask)
 
-                # if there are several masks
-                uniq = np.unique(im_mask)
-                if uniq.size > 2:
-                    try:
-                        choice
-                    except NameError:
-                        # chose one, and reuse it for every frames next
-                        choice = np.random.choice(uniq[1:])
-                    finally:
-                        _mask = im_mask == choice
-                        im_mask[:] = 0
-                        im_mask[_mask] = 1
+                if not np.any(im_mask > 0):
+                    src = (None, None)
+                    im_mask, im_mask_new = None, None
 
             if src[0] is not None:
                 # Convert mask and masked image
@@ -164,8 +161,3 @@ if __name__ == "__main__":
 
         with open(this_write_data_file, "wb") as fp:
             pickle.dump(Data_dict, fp)
-
-        try:
-            del choice
-        except NameError:
-            pass

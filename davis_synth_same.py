@@ -40,10 +40,10 @@ if __name__ == "__main__":
         v_src = np.random.choice(all_sets)
         v_tar = v_src
 
-        this_write_dir = Path(f"./data/davis_tempered/vid/{i}")
-        this_write_data_file = Path(f"./data/davis_tempered/gt/{i}.pkl")
+        this_write_dir = Path(f"./data/davis_tempered/vid/{v_tar}")
+        this_write_data_file = Path(f"./data/davis_tempered/gt/{v_tar}.pkl")
 
-        this_write_dir_gt_mask = Path(f"./data/davis_tempered/gt_mask/{i}")
+        this_write_dir_gt_mask = Path(f"./data/davis_tempered/gt_mask/{v_tar}")
 
         Data_dict = {}
 

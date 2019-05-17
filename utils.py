@@ -44,10 +44,14 @@ def check_same_side(ind, prev):
     bottom = (5, 6, 7)
     right = (2, 4, 7)
 
-    Pos = [left, right, top, bottom]
+    Pos = {'left': left, 'right':right, 'top':top, 'bottom':bottom}
 
-    for _pos in Pos:
+    for k, _pos in Pos.items():
         if np.any(ind in _pos and prev in _pos):
+            if k in ('left', 'right') and abs(ind - prev) > 2:
+                return False
+            if k in ('top', 'bottom') and abs(ind - prev) > 1:
+                return False
             return True
     return False
 

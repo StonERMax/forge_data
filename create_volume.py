@@ -55,8 +55,8 @@ if __name__ == "__main__":
     color1 = (128, 0, 0)
     color2 = (0, 128, 0)
 
-    for each_npy in tqdm(root.iterdir()):
-        with each_npy.open("rb") as fp:
+    for each_pkl in tqdm(root.iterdir()):
+        with each_pkl.open("rb") as fp:
             Data = pickle.load(fp)
 
         T = len(Data)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 X1[i - offset] = mask_orig
 
 
-        ind = np.random.choice(T, size=int(T), replace=False)
+        ind = np.random.choice(T, size=int(30), replace=False)
         ind.sort()
 
         X1 = X1[ind]
@@ -111,10 +111,11 @@ if __name__ == "__main__":
         print(X1.shape)
 
         # sns.set_style("white")
-        fig = plt.figure()
+        scale_x, scale_y, scale_z = (0.6, 1.7, 0.6)
+
+        fig = plt.figure(figsize=(8,6))
         ax = fig.gca(projection="3d")
 
-        scale_x, scale_y, scale_z = (0.6, 1.7, 0.6)
         ax.get_proj = lambda: np.dot(
             Axes3D.get_proj(ax), np.diag([scale_x, scale_y, scale_z, 1])
         )
@@ -127,10 +128,12 @@ if __name__ == "__main__":
         ax.set_yticks([])
         ax.set_zticks([])
         # ax.set_xlabel("x")
-        # ax.set_ylabel("T")
-        # ax.set_zlabel("y")
         ax.view_init(elev=66, azim=-40)
         # plt.show()
-        plt.savefig("./data/tmp.png")
+        _dir = "./data/davis_tempered/fig"
+        if not os.path.exists(_dir):
+            os.mkdir("_dir")
+
+        plt.savefig("{}/{}.png".format(_dir, each_pkl.stem))
         plt.close("all")
         break

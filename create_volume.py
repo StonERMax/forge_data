@@ -84,10 +84,10 @@ if __name__ == "__main__":
                 mask_orig = cv2.resize(mask_orig, (c, r), interpolation=cv2.INTER_NEAREST)
 
             # mask_orig = cv2.resize(mask_orig, (c, r), interpolation=cv2.INTER_NEAREST)
-            X2[i] = mask_new > 0
-
             if not empty:
                 X1[i - offset] = mask_orig
+                X2[i] = mask_new > 0
+
 
 
         ind = np.random.choice(T, size=min(T, 60), replace=False)

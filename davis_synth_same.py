@@ -40,6 +40,8 @@ if __name__ == "__main__":
         v_src = np.random.choice(all_sets)
         v_tar = v_src
 
+        print(v_src)
+
         this_write_dir = Path(f"./data/davis_tempered/vid/{v_tar}")
         this_write_data_file = Path(f"./data/davis_tempered/gt/{v_tar}.pkl")
 
@@ -98,25 +100,35 @@ if __name__ == "__main__":
 
                 if prev_ind != -1 and \
                         not utils.check_same_side(ind_bb, prev_ind):
-                    break
+                    src = (None, None)
+                    prev_ind = -2
+                    im_mani = im_t
+                    im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
+                    im_mask = None
+                    im_mask_new = None
+                    # break
                 else:
                     prev_ind = ind_bb
 
-                translate, scale, centroid =  utils.transform_mask(
-                            max_bb, mask_orig_bb, im_mask
-                )
+                    translate, scale, centroid =  utils.transform_mask(
+                                max_bb, mask_orig_bb, im_mask
+                    )
 
-                im_mask_new = utils.patch_transform(im_mask, mask_orig_bb, centroid,
-                                                    translate, scale)
+                    im_mask_new = utils.patch_transform(im_mask, mask_orig_bb, centroid,
+                                                        translate, scale)
 
-                im_mask_bool = im_mask > 0
-                im_s_masked = im_mask_bool[..., None] * im_s
+                    im_mask_bool = im_mask > 0
+                    im_s_masked = im_mask_bool[..., None] * im_s
 
-                im_s_new = utils.patch_transform(im_s_masked, mask_orig_bb,
-                                                centroid, translate, scale)
+                    im_s_n = utils.patch_transform(im_s_masked, mask_orig_bb,
+                                                    centroid, translate, scale)
 
-                # get manipulated image
-                im_mani = utils.splice(im_t, im_s_new, im_mask_new, do_blend=False)
+                    # get manipulated image
+                    im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
+                    
+                    im_s_new = np.zeros(im_s_n.shape, dtype=np.uint8)
+                    im_s_new[im_mask>0] = (255, 0, 0)
+                    im_s_new[im_mask_new>0] = (0, 0, 255)
             else:
                 im_mani = im_t
                 im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)

@@ -94,6 +94,18 @@ if __name__ == "__main__":
                 im_s = io.imread(src[0])
                 im_mask = io.imread(src[1], as_gray=True)
 
+                # if there are several mask
+                uniq = np.unique(im_mask)
+                if uniq.size > 2:
+                    try:
+                        choice
+                    except NameError:
+                        choice = np.random.choice(uniq[1:])
+                    finally:
+                        _mask = im_mask == choice
+                        im_mask[:] = 0
+                        im_mask[_mask] = 1
+
             if src[0] is not None:
                 # Convert mask and masked image
                 max_bb, mask_orig_bb, ind_bb = utils.get_max_bb(im_mask)
@@ -125,7 +137,7 @@ if __name__ == "__main__":
 
                     # get manipulated image
                     im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
-                    
+
                     im_s_new = np.zeros(im_s_n.shape, dtype=np.uint8)
                     im_s_new[im_mask>0] = (255, 0, 0)
                     im_s_new[im_mask_new>0] = (0, 0, 255)
@@ -151,3 +163,8 @@ if __name__ == "__main__":
 
         with open(this_write_data_file, "wb") as fp:
             pickle.dump(Data_dict, fp)
+
+        try:
+            del choice
+        except NameError:
+            pass

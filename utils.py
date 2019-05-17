@@ -105,11 +105,11 @@ def patch_transform(im_mask, mask_bb, new_centroid, translate=None, scale=None):
     topx = int(max(0, new_centroid[0] - wp/2))
     topy = int(max(0, new_centroid[1] - hp/2))
 
-    new_mask = np.zeros(im_mask.shape, dtype=np.float)
+    new_mask = np.zeros(im_mask.shape, dtype=patch_mask.dtype)
 
     new_mask[topy:topy+hp, topx:topx+wp] = resized_patch
 
-    return new_mask
+    return skimage.img_as_ubyte(new_mask)
 
 
 def area_bb(x):

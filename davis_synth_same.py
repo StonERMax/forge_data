@@ -14,10 +14,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Arguemnt for DAVIS synthetic dataset")
     parser.add_argument(
-        "--num", "-n", type=int, default=2, help="total manipulated video"
+        "--num", "-n", type=int, default=1, help="total manipulated video"
     )
     parser.add_argument("--seed", "-s", type=int, default=0,
                         help="random seed")
+
+    parser.add_argument("--offset", type=int, default=0)
 
     args = parser.parse_args()
     print(args)
@@ -65,7 +67,7 @@ if __name__ == "__main__":
         v_tar_folder = im_root / v_tar
         mask_folder = ann_path / v_src
 
-        offset = 10 # time
+        offset = args.offset # time
 
         tar_images = list(sorted(v_tar_folder.iterdir()))
         src_images = list(
@@ -110,7 +112,9 @@ if __name__ == "__main__":
             else:
                 im_mani = im_t
                 im_s_new = im_mask
-                im_mask_new  =im_mask
+                # im_mask_new = im_mask
+                im_mask = None
+                im_mask_new = None
 
             fname = this_write_dir / f"{counter}.jpg"
             io.imsave(fname, im_mani)
@@ -123,7 +127,8 @@ if __name__ == "__main__":
                 "source_mask_file": src[1],
                 "target_image_file": tar,
                 "mask_orig": im_mask,
-                "mask_new": im_mask_new
+                "mask_new": im_mask_new,
+                "offset": offset
             }
 
         with open(this_write_data_file, "wb") as fp:

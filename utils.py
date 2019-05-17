@@ -35,7 +35,6 @@ def splice(img_target, img_source, img_mask, do_blend=False):
     img_mani = img_mask * img_source + img_target * (1 - img_mask)
     img_mani = img_mani.astype(np.uint8)
 
-
     return img_mani
 
 def check_same_side(ind, prev):

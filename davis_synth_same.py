@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 from pathlib import Path
 import skimage.io as io
+import skimage
 import numpy as np
 import os
 import argparse
@@ -38,7 +39,7 @@ if __name__ == "__main__":
 
     for i in tqdm(range(args.num)):
         v_src = np.random.choice(all_sets)
-        v_tar = v_src
+        v_tar = v_src  # Copy move, so same video
 
         print(v_src)
 
@@ -47,8 +48,9 @@ if __name__ == "__main__":
 
         this_write_dir_gt_mask = Path(f"./data/davis_tempered/gt_mask/{v_tar}")
 
-        Data_dict = {}
+        Data_dict = {}  # Data to save gt
 
+        # create some directories if not exist
         try:
             this_write_dir.mkdir(parents=True)
         except Exception as e:
@@ -77,29 +79,30 @@ if __name__ == "__main__":
         offset = np.random.randint(0, int(len(tar_images)/2))
         if offset > 0:
             src_images = [(None, None)] * offset + src_images
+            # first offset frame has no source
 
         all_images = zip(tar_images, src_images)
 
         prev_ind = -1
 
         for counter, (tar, src) in enumerate(all_images):
-            # print(f"{tar}")
             im_t = io.imread(tar)
 
-            if src[0] is None:
+            if src[0] is None:  # do not manipulate
                 im_s = im_t.copy()
-                im_mask = None
-                im_mask_new = None
+                im_mask, im_mask_new = None, None
             else:
                 im_s = io.imread(src[0])
                 im_mask = io.imread(src[1], as_gray=True)
+                im_mask = skimage.img_as_float(im_mask)
 
-                # if there are several mask
+                # if there are several masks
                 uniq = np.unique(im_mask)
                 if uniq.size > 2:
                     try:
                         choice
                     except NameError:
+                        # chose one, and reuse it for every frames next
                         choice = np.random.choice(uniq[1:])
                     finally:
                         _mask = im_mask == choice
@@ -110,15 +113,16 @@ if __name__ == "__main__":
                 # Convert mask and masked image
                 max_bb, mask_orig_bb, ind_bb = utils.get_max_bb(im_mask)
 
+                # check if new bb is close to prev bb
                 if prev_ind != -1 and \
                         not utils.check_same_side(ind_bb, prev_ind):
+                    # Do not manipulate the following frames
                     src = (None, None)
                     prev_ind = -2
                     im_mani = im_t
                     im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
                     im_mask = None
                     im_mask_new = None
-                    # break
                 else:
                     prev_ind = ind_bb
 
@@ -137,14 +141,12 @@ if __name__ == "__main__":
 
                     # get manipulated image
                     im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
-
                     im_s_new = np.zeros(im_s_n.shape, dtype=np.uint8)
                     im_s_new[im_mask>0] = (255, 0, 0)
                     im_s_new[im_mask_new>0] = (0, 0, 255)
             else:
                 im_mani = im_t
                 im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
-                # im_mask_new = im_mask
 
             fname = this_write_dir / f"{counter}.jpg"
             io.imsave(fname, im_mani)

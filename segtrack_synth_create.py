@@ -41,10 +41,10 @@ if __name__ == "__main__":
 
         print(v_src)
 
-        this_write_dir = Path(f"./data/SegTrackv2_tempered/vid/{v_tar}")
-        this_write_data_file = Path(f"./data/SegTrackv2_tempered/gt/{v_tar}.pkl")
+        this_write_dir = Path(f"./data/SegTrackv2_tempered/vid/{i}_{v_tar}")
+        this_write_data_file = Path(f"./data/SegTrackv2_tempered/gt/{i}_{v_tar}.pkl")
 
-        this_write_dir_gt_mask = Path(f"./data/SegTrackv2_tempered/gt_mask/{v_tar}")
+        this_write_dir_gt_mask = Path(f"./data/SegTrackv2_tempered/gt_mask/{i}_{v_tar}")
 
         Data_dict = {}  # Data to save gt
 

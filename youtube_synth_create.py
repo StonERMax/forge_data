@@ -111,6 +111,9 @@ if __name__ == "__main__":
 
                 im_mask[im_mask > 0] = 1
 
+                if np.sum(im_mask) <= 0:
+                    src=  None, None
+
             if src[0] is not None:
                 # Convert mask and masked image
                 max_bb, mask_orig_bb, ind_bb = utils.get_max_bb(im_mask)
@@ -149,6 +152,7 @@ if __name__ == "__main__":
             else:
                 im_mani = im_t
                 im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
+                im_mask, im_mask_new = None, None
 
             fname = this_write_dir / f"{counter}.png"
             io.imsave(fname, im_mani)

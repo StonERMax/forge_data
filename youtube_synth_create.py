@@ -56,6 +56,9 @@ if __name__ == "__main__":
             zip(sorted(v_src_folder.iterdir()), sorted(mask_folder.iterdir()))
         )
 
+        if int(len(tar_images)/2) <=0:
+            continue
+
         offset = np.random.randint(0, int(len(tar_images)/2))
         if offset > 0:
             src_images = [(None, None)] * offset + src_images

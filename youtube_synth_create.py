@@ -8,12 +8,13 @@ import shutil
 import utils
 from tqdm import tqdm
 import pickle
+import cv2
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Arguemnt for Youtube synthetic dataset")
     parser.add_argument(
-        "--num", "-n", type=int, default=1, help="total manipulated video"
+        "--num", "-n", type=int, default=10, help="total manipulated video"
     )
     parser.add_argument("--seed", "-s", type=int, default=0,
                         help="random seed")
@@ -99,6 +100,10 @@ if __name__ == "__main__":
             else:
                 im_s = io.imread(src[0])
                 im_mask = io.imread(src[1], as_gray=True)
+
+                if im_s.shape[:2] != im_mask.shape[:2]:
+                    im_mask = cv2.resize(im_mask, (im_s.shape[1], im_s.shape[0]))
+
                 im_mask = skimage.img_as_float(im_mask)
 
                 im_mask[im_mask > 0] = 1

@@ -14,7 +14,7 @@
 
 
 cd ~/dataset/VIRAT_dataset
-python virat_ano.py
+python virat_anno.py
 
 cd /home/islama6a/local/forge_data
 python -W ignore virat_synth_create.py

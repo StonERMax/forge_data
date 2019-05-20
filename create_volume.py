@@ -36,105 +36,100 @@ def set_axes_equal(ax):
     set_axes_radius(ax, origin, radius)
 
 
+Datasets=["davis_tempered", "SegTrackv2_tempered",
+        "youtube_tempered"]
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Arguemnt for creating 3d")
-    parser.add_argument(
-        "--root",
-        type=str,
-        default="./data/davis_tempered/gt",
-        help="ground truth folder",
-    )
 
-    args = parser.parse_args()
-    print(args)
 
-    root = Path(args.root)
+    for each in Datasets:
+        root = Path("./data/") / each / "gt"
 
-    scale = 1 / 10
+        scale = 1 / 10
 
-    color1 = (128, 0, 0)
-    color2 = (0, 128, 0)
+        color1 = (128, 0, 0)
+        color2 = (0, 128, 0)
 
-    for each_pkl in tqdm(root.iterdir()):
-        with each_pkl.open("rb") as fp:
-            Data = pickle.load(fp)
+        for each_pkl in tqdm(root.iterdir()):
+            with each_pkl.open("rb") as fp:
+                Data = pickle.load(fp)
 
-        T = len(Data)
+            T = len(Data)
 
-        for i, fname in tqdm(enumerate(Data)):
-            mask_orig = Data[fname]["mask_orig"]
-            mask_new = Data[fname]["mask_new"]
-            offset = Data[fname]["offset"]
+            for i, fname in tqdm(enumerate(Data)):
+                mask_orig = Data[fname]["mask_orig"]
+                mask_new = Data[fname]["mask_new"]
+                offset = Data[fname]["offset"]
 
-            empty = False
-            if mask_orig is None:
-                empty = True  # no mask here
+                empty = False
+                if mask_orig is None:
+                    empty = True  # no mask here
 
-            if i == 0:
-                # r, c = int(mask_new.shape[0]*scale), int(mask_new.shape[1]*scale)
-                r, c = 20, 20
-                X1 = np.zeros((T, r, c), dtype=bool)
-                X2 = np.zeros((T, r, c), dtype=bool)
+                if i == 0:
+                    # r, c = int(mask_new.shape[0]*scale), int(mask_new.shape[1]*scale)
+                    r, c = 20, 20
+                    X1 = np.zeros((T, r, c), dtype=bool)
+                    X2 = np.zeros((T, r, c), dtype=bool)
 
-            if empty:
-                mask_new = np.zeros((r, c), dtype=np.uint8)
-                mask_orig = np.zeros((r, c), dtype=np.uint8)
-            else:
-                mask_new = cv2.resize(mask_new, (c, r), interpolation=cv2.INTER_NEAREST)
-                mask_orig = cv2.resize(mask_orig, (c, r), interpolation=cv2.INTER_NEAREST)
+                if empty:
+                    mask_new = np.zeros((r, c), dtype=np.uint8)
+                    mask_orig = np.zeros((r, c), dtype=np.uint8)
+                else:
+                    mask_new = cv2.resize(mask_new, (c, r), interpolation=cv2.INTER_NEAREST)
+                    mask_orig = cv2.resize(mask_orig, (c, r), interpolation=cv2.INTER_NEAREST)
 
-            # mask_orig = cv2.resize(mask_orig, (c, r), interpolation=cv2.INTER_NEAREST)
-            if not empty:
-                X1[i - offset] = mask_orig
-                X2[i] = mask_new > 0
+                # mask_orig = cv2.resize(mask_orig, (c, r), interpolation=cv2.INTER_NEAREST)
+                if not empty:
+                    X1[i - offset] = mask_orig
+                    X2[i] = mask_new > 0
 
 
 
-        ind = np.random.choice(T, size=min(T, 60), replace=False)
-        ind.sort()
+            ind = np.random.choice(T, size=min(T, 60), replace=False)
+            ind.sort()
 
-        X1 = X1[ind]
-        X2 = X2[ind]
+            X1 = X1[ind]
+            X2 = X2[ind]
 
-        X1 = X1.transpose(2, 0, 1)
-        X2 = X2.transpose(2, 0, 1)
+            X1 = X1.transpose(2, 0, 1)
+            X2 = X2.transpose(2, 0, 1)
 
-        Colors1 = np.zeros(X1.shape + (4,), dtype=np.float)
-        Colors2 = np.zeros(X2.shape + (4,), dtype=np.float)
+            Colors1 = np.zeros(X1.shape + (4,), dtype=np.float)
+            Colors2 = np.zeros(X2.shape + (4,), dtype=np.float)
 
-        # Colors1[:, :] = (0, 0, 0, 0)
-        # Colors2[:, :] = (0, 0, 0, 0)
+            # Colors1[:, :] = (0, 0, 0, 0)
+            # Colors2[:, :] = (0, 0, 0, 0)
 
-        Colors1[X1] = (1, 0, 0, 0.8)
-        Colors2[X2] = (0, 0, 1, 0.5)
+            Colors1[X1] = (1, 0, 0, 0.8)
+            Colors2[X2] = (0, 0, 1, 0.5)
 
-        print(X1.shape)
+            print(X1.shape)
 
-        # sns.set_style("white")
-        scale_x, scale_y, scale_z = (0.6, 1.7, 0.6)
+            # sns.set_style("white")
+            scale_x, scale_y, scale_z = (0.6, 1.7, 0.6)
 
-        fig = plt.figure(figsize=(8,6))
-        ax = fig.gca(projection="3d")
+            fig = plt.figure(figsize=(8,6))
+            ax = fig.gca(projection="3d")
 
-        ax.get_proj = lambda: np.dot(
-            Axes3D.get_proj(ax), np.diag([scale_x, scale_y, scale_z, 1])
-        )
+            ax.get_proj = lambda: np.dot(
+                Axes3D.get_proj(ax), np.diag([scale_x, scale_y, scale_z, 1])
+            )
 
-        ax.voxels(X1, facecolors=Colors1, label="source")
-        ax.voxels(X2, facecolors=Colors2, label="manipulated")
-        # ax.legend()
+            ax.voxels(X1, facecolors=Colors1, label="source")
+            ax.voxels(X2, facecolors=Colors2, label="manipulated")
+            # ax.legend()
 
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
-        # ax.set_xlabel("x")
-        ax.view_init(elev=66, azim=-40)
-        # plt.show()
-        # _dir = "./data/davis_tempered/fig"
-        _dir = '/'.join(root.parts[:-1]) + '/fig'
-        if not os.path.exists(_dir):
-            os.mkdir(_dir)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_zticks([])
+            # ax.set_xlabel("x")
+            ax.view_init(elev=66, azim=-40)
+            # plt.show()
+            # _dir = "./data/davis_tempered/fig"
+            _dir = '/'.join(root.parts[:-1]) + '/fig'
+            if not os.path.exists(_dir):
+                os.mkdir(_dir)
 
-        plt.savefig("{}/{}.png".format(_dir, each_pkl.stem))
-        plt.close("all")
-        # break
+            plt.savefig("{}/{}.png".format(_dir, each_pkl.stem))
+            plt.close("all")
+            # break

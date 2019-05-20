@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     all_sets = [f.name for f in ann_path.iterdir()]
 
-    for i in tqdm(range(args.num)):
+    for i in range(args.num):
         v_src = np.random.choice(all_sets)
         v_tar = v_src  # Copy move, so same video
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
         total_len = len(_tar_images)
 
-        for j in range(args.per):
+        for j in tqdm(range(args.per)):
 
             this_write_dir = Path(f"./data/VIRAT/vid/{i}_{j}_{v_tar}")
             this_write_data_file = Path(f"./data/VIRAT/gt/{i}_{j}_{v_tar}.pkl")
@@ -213,5 +213,3 @@ if __name__ == "__main__":
                 del choice
             except NameError:
                 pass
-
-            break

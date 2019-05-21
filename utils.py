@@ -25,7 +25,7 @@ def splice(img_target, img_source, img_mask, do_blend=False):
         #     img_source, img_target, img_mask, offset=(0, 0)
         # )
         img_mani = Laplacian_Pyramid_Blending_with_mask(
-            img_source, img_target, img_mask, num_levels=5
+            img_source, img_target, img_mask, num_levels=3
         )
         return img_mani
 
@@ -146,6 +146,8 @@ def wh_bb(x):
 def Laplacian_Pyramid_Blending_with_mask(A, B, m, num_levels = 6):
     # assume mask is float32 [0,1]
 
+    m = cv2.dilate(m, np.ones((2, 2)), iterations=1)
+
     m = m.astype(np.float)
     m[m > 0] = 1
 
@@ -164,10 +166,10 @@ def Laplacian_Pyramid_Blending_with_mask(A, B, m, num_levels = 6):
         gpB.append(GB.astype(np.float))
         gpM.append(GM.astype(np.float))
 
-    def sub_same_shape(X, Y):
-        # X-Y, Y may have higher shape
-        YY = Y[:X.shape[0], :X.shape[1]]
-        return np.subtract(X, YY)
+    def same_shape(X, Y):
+        r = min(X.shape[0], Y.shape[0])
+        c = min(X.shape[1], Y.shape[1])
+        return X[:r, :c], Y[:r, :c]
 
     # generate Laplacian Pyramids for A,B and masks
     lpA  = [gpA[num_levels-1]] # the bottom of the Lap-pyr holds the last (smallest) Gauss level
@@ -176,10 +178,8 @@ def Laplacian_Pyramid_Blending_with_mask(A, B, m, num_levels = 6):
     for i in range(num_levels-1,0,-1):
         # Laplacian: subtarct upscaled version of lower level from current level
         # to get the high frequencies
-        # LA = np.subtract(gpA[i-1], cv2.pyrUp(gpA[i]))
-        # LB = np.subtract(gpB[i-1], cv2.pyrUp(gpB[i]))
-        LA = sub_same_shape(gpA[i-1], cv2.pyrUp(gpA[i]))
-        LB = sub_same_shape(gpB[i-1], cv2.pyrUp(gpB[i]))
+        LA = np.subtract(*same_shape(gpA[i-1], cv2.pyrUp(gpA[i])))
+        LB = np.subtract(*same_shape(gpB[i-1], cv2.pyrUp(gpB[i])))
         lpA.append(LA)
         lpB.append(LB)
         gpMr.append(gpM[i-1]) # also reverse the masks
@@ -196,9 +196,12 @@ def Laplacian_Pyramid_Blending_with_mask(A, B, m, num_levels = 6):
     ls_ = LS[0]
     for i in range(1,num_levels):
         ls_ = cv2.pyrUp(ls_)
-        ls_ = cv2.add(ls_, LS[i])
+        ls_ = cv2.add(*same_shape(ls_, LS[i]))
+    ls_ = ls_.astype(np.uint8)
+    if B.shape != ls_.shape:
+        ls_ = cv2.resize(ls_, (B.shape[1], B.shape[0]))
 
-    return ls_.astype(np.uint8)
+    return ls_
 
 if __name__ == '__main__':
     ann = '/home/ashraful/dataset/DAVIS/Annotations/480p/bear/00000.png'
@@ -209,6 +212,6 @@ if __name__ == '__main__':
     im2 = io.imread(fdest)
     mask = io.imread(ann, as_gray=True)
     mask[mask>0] = 1
-    nim = Laplacian_Pyramid_Blending_with_mask(im1, im2, mask, num_levels=2)
+    nim = Laplacian_Pyramid_Blending_with_mask(im1, im2, mask, num_levels=6)
     io.imshow(nim)
     io.show()

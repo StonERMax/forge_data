@@ -20,6 +20,7 @@ if __name__ == "__main__":
                         help="random seed")
 
     parser.add_argument("--offset", type=int, default=0)
+    parser.add_argument("--blend", type=bool, default=False)
 
     args = parser.parse_args()
     print(args)
@@ -136,7 +137,8 @@ if __name__ == "__main__":
                                                     centroid, translate, scale)
 
                     # get manipulated image
-                    im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
+                    im_mani = utils.splice(im_t, im_s_n, im_mask_new,
+                    						do_blend=args.blend)
                     im_s_new = np.zeros(im_s_n.shape, dtype=np.uint8)
                     im_s_new[im_mask>0] = (255, 0, 0)
                     im_s_new[im_mask_new>0] = (0, 0, 255)

@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os
+import os, sys
 from pathlib import Path
 import skimage.io as io
 import skimage
@@ -12,6 +12,9 @@ import pickle
 import cv2
 
 
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter("ignore")
 
 def transform_mask(max_bb, mask_bb, mask):
     w, h = utils.wh_bb(max_bb)
@@ -71,12 +74,9 @@ if __name__ == "__main__":
 
     all_sets = [f.name for f in ann_path.iterdir()]
 
-    for i in range(args.num):
-        v_src = np.random.choice(all_sets)
+    for i, v_src in enumerate(all_sets):
+        # v_src = np.random.choice(all_sets)
         v_tar = v_src  # Copy move, so same video
-
-        print(v_src)
-
         v_src_folder = im_root / v_src
         v_tar_folder = im_root / v_tar
         mask_folder = ann_path / v_src
@@ -94,6 +94,7 @@ if __name__ == "__main__":
 
             this_write_dir_gt_mask = Path(f"./data/VIRAT/gt_mask/{i}_{j}_{v_tar}")
 
+            print(this_write_dir)
             Data_dict = {}  # Data to save gt
 
             # create some directories if not exist
@@ -118,7 +119,7 @@ if __name__ == "__main__":
             src_images = list(zip(_src_images[_strt:_strt+vid_len],
                              _mask_images[_strt:_strt+vid_len]))
 
-            offset = 0#np.random.randint(0, int(len(tar_images)/2))
+            offset = np.random.randint(0, int(len(tar_images)/2))
             if offset > 0:
                 src_images = [(None, None)] * offset + src_images
                 # first offset frame has no source
@@ -140,7 +141,7 @@ if __name__ == "__main__":
 
                     # if there are several masks
                     uniq = np.unique(im_mask)
-                    if uniq.size > 2:
+                    if uniq.size >= 2:
                         try:
                             choice
                         except NameError:
@@ -150,6 +151,10 @@ if __name__ == "__main__":
                             _mask = im_mask == choice
                             im_mask[:] = 0
                             im_mask[_mask] = 1
+                        if choice not in uniq:
+                            src = (None, None)
+                    else:
+                        src = (None, None)
 
                 if src[0] is not None:
                     # Convert mask and masked image

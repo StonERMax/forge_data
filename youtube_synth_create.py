@@ -9,6 +9,15 @@ import utils
 from tqdm import tqdm
 import pickle
 import cv2
+import sys
+
+
+
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter("ignore")
+
+
 
 if __name__ == "__main__":
 

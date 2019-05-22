@@ -1,6 +1,6 @@
 
 echo ###############################################
-# python -W ignore davis_synth_create.py
+python -W ignore davis_synth_create.py
 echo ###############################################
 echo ###############################################
 

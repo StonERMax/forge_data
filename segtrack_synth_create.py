@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
         mask_files = sorted(mask_folder.iterdir())
 
-        if not any([flg.suffix == ".png" for flg in mask_files]):
+        if not any([flg.suffix in (".png", ".bmp", ".jpg") for flg in mask_files]):
             fldr = [x for x in mask_files if x.is_dir()]
             choice = np.random.choice(fldr)
             mask_folder = choice

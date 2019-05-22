@@ -13,19 +13,20 @@ import sys
 
 if not sys.warnoptions:
     import warnings
+
     warnings.simplefilter("ignore")
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Arguemnt for SegtrackV2 synthetic dataset")
-    parser.add_argument(
-        "--num", "-n", type=int, default=1, help="total manipulated video"
+    parser = argparse.ArgumentParser(
+        description="Arguemnt for SegtrackV2 synthetic dataset"
     )
-    parser.add_argument("--seed", "-s", type=int, default=0,
-                        help="random seed")
+    parser.add_argument(
+        "--num", "-n", type=int, default=-1, help="total manipulated video"
+    )
+    parser.add_argument("--seed", "-s", type=int, default=0, help="random seed")
 
-    parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--blend", type=bool, default=False)
 
     args = parser.parse_args()
@@ -41,6 +42,9 @@ if __name__ == "__main__":
     im_root = root / "JPEGImages"
 
     all_sets = [f.name for f in ann_path.iterdir()]
+
+    if args.num < 0:
+        args.num = len(all_sets)
 
     for i in tqdm(range(args.num)):
         v_src = np.random.choice(all_sets)
@@ -78,17 +82,28 @@ if __name__ == "__main__":
 
         mask_files = sorted(mask_folder.iterdir())
 
-        if not any([flg.suffix == '.png' for flg in mask_files]):
+        if not any([flg.suffix == ".png" for flg in mask_files]):
             fldr = [x for x in mask_files if x.is_dir()]
             choice = np.random.choice(fldr)
             mask_folder = choice
 
-        tar_images = sorted(v_tar_folder.iterdir())
-        src_images = list(
-            zip(sorted(v_src_folder.iterdir()), sorted(mask_folder.iterdir()))
+        v_tar_folder_list = sorted(v_tar_folder.iterdir())
+        v_src_folder_list = sorted(v_src_folder.iterdir())
+        mask_folder_list = sorted(mask_folder.iterdir())
+
+        _str = np.random.randint(0, int(len(v_tar_folder_list)*0.3)+1)
+        _end = np.random.randint(
+            int(len(v_tar_folder_list)*0.7),
+            len(v_tar_folder_list)
         )
 
-        offset = np.random.randint(0, int(len(tar_images)/2))
+        tar_images = v_tar_folder_list[_str:_end+1]
+        src_images = list(zip(
+            v_src_folder_list[_str:_end+1],
+            mask_folder_list[_str:_end+1]
+        ))
+
+        offset = np.random.randint(0, int(len(tar_images) * 0.4))
         if offset > 0:
             src_images = [(None, None)] * offset + src_images
             # first offset frame has no source
@@ -96,6 +111,7 @@ if __name__ == "__main__":
         all_images = zip(tar_images, src_images)
 
         prev_ind = -1
+        prev_scale = -1
 
         for counter, (tar, src) in enumerate(all_images):
             im_t = io.imread(tar)
@@ -114,11 +130,15 @@ if __name__ == "__main__":
 
             if src[0] is not None:
                 # Convert mask and masked image
-                max_bb, mask_orig_bb, ind_bb = utils.get_max_bb(im_mask)
 
+                ret = utils.fn_max_trans(im_mask, prev_ind, prev_scale)
+
+                # max_bb, mask_orig_bb, ind_bb = utils.get_max_bb(im_mask)
+                # translate, scale, centroid = utils.transform_mask(
+                #     max_bb, mask_orig_bb, im_mask
+                # )
                 # check if new bb is close to prev bb
-                if prev_ind != -1 and \
-                        not utils.check_same_side(ind_bb, prev_ind):
+                if ret is None:
                     # Do not manipulate the following frames
                     src = (None, None)
                     prev_ind = -2
@@ -127,27 +147,27 @@ if __name__ == "__main__":
                     im_mask = None
                     im_mask_new = None
                 else:
+                    translate, scale, centroid, mask_orig_bb, ind_bb = ret
                     prev_ind = ind_bb
-
-                    translate, scale, centroid =  utils.transform_mask(
-                                max_bb, mask_orig_bb, im_mask
+                    prev_scale = scale
+                    im_mask_new = utils.patch_transform(
+                        im_mask, mask_orig_bb, centroid, translate, scale
                     )
-
-                    im_mask_new = utils.patch_transform(im_mask, mask_orig_bb, centroid,
-                                                        translate, scale)
 
                     im_mask_bool = im_mask > 0
                     im_s_masked = im_mask_bool[..., None] * im_s
 
-                    im_s_n = utils.patch_transform(im_s_masked, mask_orig_bb,
-                                                    centroid, translate, scale)
+                    im_s_n = utils.patch_transform(
+                        im_s_masked, mask_orig_bb, centroid, translate, scale
+                    )
 
                     # get manipulated image
-                    im_mani = utils.splice(im_t, im_s_n, im_mask_new,
-                    						do_blend=args.blend)
+                    im_mani = utils.splice(
+                        im_t, im_s_n, im_mask_new, do_blend=args.blend
+                    )
                     im_s_new = np.zeros(im_s_n.shape, dtype=np.uint8)
-                    im_s_new[im_mask>0] = (255, 0, 0)
-                    im_s_new[im_mask_new>0] = (0, 0, 255)
+                    im_s_new[im_mask > 0] = (255, 0, 0)
+                    im_s_new[im_mask_new > 0] = (0, 0, 255)
             else:
                 im_mani = im_t
                 im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
@@ -164,7 +184,7 @@ if __name__ == "__main__":
                 "target_image_file": tar,
                 "mask_orig": im_mask,
                 "mask_new": im_mask_new,
-                "offset": offset
+                "offset": offset,
             }
 
         with open(this_write_data_file, "wb") as fp:

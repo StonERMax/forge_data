@@ -86,7 +86,63 @@ def get_max_bb(mask):
     return max_bb, mask_orig_bb, max_ind
 
 
-def transform_mask(max_bb, mask_bb, mask):
+def fn_argmax(key_BB, ratio_thres=0.8):
+    _sort = np.argsort(key_BB)[::-1]
+    if key_BB[_sort[1]] / key_BB[_sort[0]] > ratio_thres:
+        if np.random.rand() > 0.2:
+            return _sort[0]
+        else:
+            return _sort[1]
+    else:
+        return _sort[0]
+
+
+def fn_max_trans(mask, prev_ind=-1, prev_scale=-1):
+    h, w = mask.shape[:2]
+    m_y, m_x = np.where(mask > 0)
+    x1, x2 = np.min(m_x), np.max(m_x)
+    y1, y2 = np.min(m_y), np.max(m_y)
+
+    mask_orig_bb = (x1, y1, x2, y2)
+
+    BBs = [
+        (0, 0, x1, y1),
+        (x1, 0, x2, y1),
+        (x2, 0, w, y1),
+        (0, y1, x1, y2),
+        (x2, y1, w, y2),
+        (0, y2, x1, h),
+        (x1, y2, x2, h),
+        (x2, y2, w, h)
+    ]
+
+    key_BB = [min(wh_bb(x)) for x in BBs]
+
+    max_ind = fn_argmax(key_BB) # np.argmax(key_BB)
+    max_bb = BBs[max_ind]
+
+    try:
+        translate, scale, centroid = transform_mask(max_bb, mask_orig_bb, mask)
+        if prev_ind >= 0:
+            translate_, scale_, centroid_ = transform_mask(
+                BBs[prev_ind], mask_orig_bb, mask)
+            if scale_ / prev_scale > 0.8:
+                max_bb = BBs[prev_ind]
+                max_ind = prev_ind
+                return translate_, scale_, centroid_, mask_orig_bb, max_ind
+            elif check_same_side(max_ind, prev_ind):
+                return translate, scale, centroid, mask_orig_bb, max_ind
+            else:
+                return None
+        elif prev_ind == -1:
+            return translate, scale, centroid, mask_orig_bb, max_ind
+        else:
+            return None
+    except ValueError:
+        return None
+
+
+def transform_mask(max_bb, mask_bb, mask, max_scale=1.2):
     w, h = wh_bb(max_bb)
     pad = 0.1 * min(w, h)
     effective_bb = np.array([
@@ -107,11 +163,15 @@ def transform_mask(max_bb, mask_bb, mask):
 
     fx, fy = w_n / w_o, h_n / h_o
 
-    scale = min(fx, fy)
+    scale = min(max_scale, fx, fy)
+
+    # random scaling
+    scale = (np.random.rand() * 0.05 + 0.95) * scale
 
     if scale <= 0:
-        import pdb
-        pdb.set_trace()
+        raise ValueError
+        # import pdb
+        # pdb.set_trace()
 
     return translate, scale, centroid
 

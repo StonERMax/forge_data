@@ -57,6 +57,8 @@ if __name__ == "__main__":
         args.num = len(_all_sets)
 
     for i in tqdm(range(args.num)):
+        # for k in range(28):
+        #     next(all_sets)
         v_src = next(all_sets)
         v_tar = v_src  # Copy move, so same video
 
@@ -141,6 +143,9 @@ if __name__ == "__main__":
                         else:
                             src = (None, None)
                             im_mask, im_mask_new = None, None
+                if not np.any(im_mask > 0):
+                    src = (None, None)
+                    im_mask, im_mask_new = None, None
 
             if src[0] is not None:
                 ret = utils.fn_max_trans(im_mask, prev_ind, prev_scale)

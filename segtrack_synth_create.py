@@ -17,6 +17,17 @@ if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 
+def it_repeat(ar, shuffle=True):
+    if shuffle:
+        np.random.shuffle(ar)
+    _len = len(ar)
+    i = 0
+    while True:
+        yield ar[i%_len]
+        i += 1
+
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -40,14 +51,14 @@ if __name__ == "__main__":
     ann_path = root / "GroundTruth"
 
     im_root = root / "JPEGImages"
-
-    all_sets = [f.name for f in ann_path.iterdir()]
+    _all_sets = [f.name for f in ann_path.iterdir()]
+    all_sets = it_repeat(_all_sets)
 
     if args.num < 0:
-        args.num = len(all_sets)
+        args.num = len(_all_sets)
 
     for i in tqdm(range(args.num)):
-        v_src = np.random.choice(all_sets)
+        v_src = next(all_sets)
         v_tar = v_src  # Copy move, so same video
 
         print(v_src)

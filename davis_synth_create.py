@@ -143,7 +143,7 @@ if __name__ == "__main__":
                         else:
                             src = (None, None)
                             im_mask, im_mask_new = None, None
-                if not np.any(im_mask > 0):
+                if im_mask is not None and not np.any(im_mask > 0):
                     src = (None, None)
                     im_mask, im_mask_new = None, None
 

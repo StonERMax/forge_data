@@ -181,11 +181,12 @@ if __name__ == "__main__":
             else:
                 im_mani = im_t
                 im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
+                im_mask, im_mask_new = None, None
 
             fname = this_write_dir / f"{counter}.png"
             io.imsave(fname, im_mani)
 
-            fname2 = this_write_dir_gt_mask / f"{counter}.jpg"
+            fname2 = this_write_dir_gt_mask / f"{counter}.png"
             io.imsave(fname2, im_s_new)
 
             Data_dict[fname] = {

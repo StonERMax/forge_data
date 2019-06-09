@@ -195,7 +195,7 @@ if __name__ == "__main__":
                 fname = this_write_dir / f"{counter}.png"
                 io.imsave(fname, im_mani)
 
-                fname2 = this_write_dir_gt_mask / f"{counter}.jpg"
+                fname2 = this_write_dir_gt_mask / f"{counter}.png"
                 io.imsave(fname2, im_s_new)
 
                 Data_dict[fname] = {

@@ -108,10 +108,10 @@ if __name__ == "__main__":
 
             tmp = v_src_folder.parts
             _flg = tmp[-6] + "_" + tmp[-4]
-            this_write_dir = Path(f"./data/youtube_tempered/vid/{i}_{_flg}")
-            this_write_data_file = Path(f"./data/youtube_tempered/gt/{i}_{_flg}.pkl")
+            this_write_dir = Path(f"./data/tmp_youtube_tempered/vid/{i}_{_flg}")
+            this_write_data_file = Path(f"./data/tmp_youtube_tempered/gt/{i}_{_flg}.pkl")
 
-            this_write_dir_gt_mask = Path(f"./data/youtube_tempered/gt_mask/{i}_{_flg}")
+            this_write_dir_gt_mask = Path(f"./data/tmp_youtube_tempered/gt_mask/{i}_{_flg}")
 
             Data_dict = {}  # Data to save gt
 
@@ -134,9 +134,11 @@ if __name__ == "__main__":
 
             prev_ind = -1
             prev_scale = -1
+            prev_xy = (None, None)
+            translate = None
 
             for counter, (tar, src) in enumerate(all_images):
-                im_t = io.imread(tar)
+                im_t = skimage.img_as_float(io.imread(tar))
 
                 if src[0] is None:  # do not manipulate
                     im_s = im_t.copy()
@@ -157,36 +159,35 @@ if __name__ == "__main__":
                         im_mask, im_mask_new = None, None
 
                 if src[0] is not None:
-                    ret = utils.fn_max_trans(im_mask, prev_ind, prev_scale)
-
-                    # check if new bb is close to prev bb
-                    if ret is None:
-                        # Do not manipulate the following frames
-                        src = (None, None)
-                        prev_ind = -2
-                        im_mani = im_t
-                        im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
-                        im_mask = None
-                        im_mask_new = None
-                    else:
-                        translate, scale, centroid, mask_orig_bb, ind_bb = ret
-                        prev_ind = ind_bb
+                    if prev_ind == -1:
+                        ret = utils.tmp_fn_max_trans(im_mask, prev_ind, prev_scale, prev_xy)
+                        if ret is None:
+                            break
+                        else:
+                            translate, scale, centroid, mask_orig_bb = ret
+                    if translate is not None:
+                        prev_ind = 0
                         prev_scale = scale
 
-                        im_mask_new = utils.patch_transform(im_mask, mask_orig_bb, centroid,
-                                                            translate, scale)
+                        # im_mask_new = utils.patch_transform(im_mask, mask_orig_bb, centroid,
+                        #                                     translate, scale)
 
-                        im_mask_bool = im_mask > 0
-                        im_s_masked = im_mask_bool[..., None] * im_s
+                        im_mask_b = im_mask > 0
+                        im_mask_new = im_mask_b
 
-                        im_s_n = utils.patch_transform(im_s_masked, mask_orig_bb,
-                                                        centroid, translate, scale)
-
+                        im_mask_bool = im_mask_b[..., None].repeat(3, 2)
+                        # im_s_masked = im_mask_bool[..., None] * im_s
+                        #
+                        tfm = skimage.transform.SimilarityTransform(
+                            translation = -translate)
+                        im_s_tfm = skimage.transform.warp(im_s, tfm)
+                        im_mask_bool = skimage.transform.warp(im_mask_bool, tfm)
+                        im_mani = im_mask_bool * im_s_tfm + (1-im_mask_bool)*im_t
                         # get manipulated image
-                        im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
-                        im_s_new = np.zeros(im_s_n.shape, dtype=np.uint8)
+                        # im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
+                        im_s_new = np.zeros(im_mani.shape, dtype=np.uint8)
                         im_s_new[im_mask>0] = (255, 0, 0)
-                        im_s_new[im_mask_new>0] = (0, 0, 255)
+                        im_s_new[im_mask_bool[..., 0]>0] = (0, 0, 255)
                 else:
                     im_mani = im_t
                     im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
@@ -207,13 +208,9 @@ if __name__ == "__main__":
                     "offset": offset
                 }
 
-            with open(this_write_data_file, "wb") as fp:
-                pickle.dump(Data_dict, fp)
-
-            try:
-                del choice
-            except NameError:
-                pass
+            if prev_ind >= 0:
+                with open(this_write_data_file, "wb") as fp:
+                    pickle.dump(Data_dict, fp)
 
         i += 1
         progress.update()

@@ -67,6 +67,7 @@ def get_max_bb(mask):
 
     mask_orig_bb = (x1, y1, x2, y2)
 
+
     BBs = [
         (0, 0, x1, y1),
         (x1, 0, x2, y1),
@@ -95,6 +96,49 @@ def fn_argmax(key_BB, ratio_thres=0.8):
             return _sort[1]
     else:
         return _sort[0]
+
+
+def tmp_fn_max_trans(mask, prev_ind=-1, prev_scale=-1, prev_xy=(None, None)):
+    h, w = mask.shape[:2]
+    m_y, m_x = np.where(mask > 0)
+    x1, x2 = np.min(m_x), np.max(m_x)
+    y1, y2 = np.min(m_y), np.max(m_y)
+
+    mask_orig_bb = (x1, y1, x2, y2)
+
+    centroid_orig = centroid_bb(mask_orig_bb)
+    BBs = [
+        (0, 0, x1, y1),
+        (x1, 0, x2, y1),
+        (x2, 0, w, y1),
+        (0, y1, x1, y2),
+        (x2, y1, w, y2),
+        (0, y2, x1, h),
+        (x1, y2, x2, h),
+        (x2, y2, w, h)
+    ]
+
+    key_BB = [(wh_bb(x)) for x in BBs]
+
+    flag_BB = [((mw>w) & (mh>h))   for mw, mh in key_BB]
+
+    cmp = [key_BB[i][0]*key_BB[i][1]  for i in range(len(flag_BB))]
+    max_ind = np.argmax(cmp)
+    max_bb = BBs[max_ind]
+
+    if cmp[max_ind] == 0:
+        return None
+
+
+    def tmp_transform_mask(max_bb, mask_orig_bb, mask):
+        centroid = centroid_bb(max_bb)
+        centroid_orig = centroid_bb(mask_orig_bb)
+        translate = centroid - centroid_orig
+        return translate, 1, centroid
+
+    translate, scale, centroid = tmp_transform_mask(max_bb, mask_orig_bb, mask)
+
+    return translate, scale, centroid, mask_orig_bb
 
 
 def fn_max_trans(mask, prev_ind=-1, prev_scale=-1):

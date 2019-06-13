@@ -1,19 +1,23 @@
 
-echo ###############################################
-python -W ignore davis_synth_create.py
-echo ###############################################
-echo ###############################################
+#echo ###############################################
+#python -W ignore davis_synth_create.py
+#echo ###############################################
+#echo ###############################################
 
-python -W ignore segtrack_synth_create.py
-
-
-echo ###############################################
-echo ###############################################
-python -W ignore youtube_synth_create.py
+#python -W ignore segtrack_synth_create.py
 
 
-# cd ~/dataset/VIRAT_dataset
-# python virat_anno.py
+#echo ###############################################
+#echo ###############################################
+#python -W ignore youtube_synth_create.py
 
-# cd /home/islama6a/local/forge_data
-# python -W ignore virat_synth_create.py
+
+## cd ~/dataset/VIRAT_dataset
+## python virat_anno.py
+
+## cd /home/islama6a/local/forge_data
+## python -W ignore virat_synth_create.py
+
+python get_flow.py --dataset youtube
+
+python get_flow.py --dataset davis

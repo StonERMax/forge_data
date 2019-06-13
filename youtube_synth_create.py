@@ -108,10 +108,10 @@ if __name__ == "__main__":
 
             tmp = v_src_folder.parts
             _flg = tmp[-6] + "_" + tmp[-4]
-            this_write_dir = Path(f"./data/youtube_tempered/vid/{i}_{_flg}")
-            this_write_data_file = Path(f"./data/youtube_tempered/gt/{i}_{_flg}.pkl")
+            this_write_dir = Path(f"./data/tmp_youtube_tempered/vid/{i}_{_flg}")
+            this_write_data_file = Path(f"./data/tmp_youtube_tempered/gt/{i}_{_flg}.pkl")
 
-            this_write_dir_gt_mask = Path(f"./data/youtube_tempered/gt_mask/{i}_{_flg}")
+            this_write_dir_gt_mask = Path(f"./data/tmp_youtube_tempered/gt_mask/{i}_{_flg}")
 
             Data_dict = {}  # Data to save gt
 

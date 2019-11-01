@@ -64,10 +64,10 @@ if __name__ == "__main__":
 
         print(v_src)
 
-        this_write_dir = Path(f"./data/tmp_davis_tempered/vid/{i}_{v_tar}")
-        this_write_data_file = Path(f"./data/tmp_davis_tempered/gt/{i}_{v_tar}.pkl")
+        this_write_dir = Path(f"./data/ttmp_davis_tempered/vid/{i}_{v_tar}")
+        this_write_data_file = Path(f"./data/ttmp_davis_tempered/gt/{i}_{v_tar}.pkl")
 
-        this_write_dir_gt_mask = Path(f"./data/tmp_davis_tempered/gt_mask/{i}_{v_tar}")
+        this_write_dir_gt_mask = Path(f"./data/ttmp_davis_tempered/gt_mask/{i}_{v_tar}")
 
         Data_dict = {}  # Data to save gt
 
@@ -102,7 +102,6 @@ if __name__ == "__main__":
             )
             if _end - _str < 80:
                 break
-
 
         tar_images = v_tar_folder_list[_str:_end]
         src_images = list(zip(

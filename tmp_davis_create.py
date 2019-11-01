@@ -10,11 +10,14 @@ import utils
 from tqdm import tqdm
 import pickle
 import sys
+import matplotlib.pyplot as plt
 
 
 if not sys.warnoptions:
     import warnings
+
     warnings.simplefilter("ignore")
+
 
 def it_repeat(ar, shuffle=True):
     if shuffle:
@@ -22,18 +25,21 @@ def it_repeat(ar, shuffle=True):
     _len = len(ar)
     i = 0
     while True:
-        yield ar[i%_len]
+        yield ar[i % _len]
         i += 1
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Arguemnt for DAVIS synthetic dataset")
+    parser = argparse.ArgumentParser(
+        description="Arguemnt for DAVIS synthetic dataset"
+    )
     parser.add_argument(
         "--num", "-n", type=int, default=-1, help="total manipulated video"
     )
-    parser.add_argument("--seed", "-s", type=int, default=0,
-                        help="random seed")
+    parser.add_argument(
+        "--seed", "-s", type=int, default=0, help="random seed"
+    )
 
     parser.add_argument("--offset", type=int, default=0)
 
@@ -65,9 +71,13 @@ if __name__ == "__main__":
         print(v_src)
 
         this_write_dir = Path(f"./data/ttmp_davis_tempered/vid/{i}_{v_tar}")
-        this_write_data_file = Path(f"./data/ttmp_davis_tempered/gt/{i}_{v_tar}.pkl")
+        this_write_data_file = Path(
+            f"./data/ttmp_davis_tempered/gt/{i}_{v_tar}.pkl"
+        )
 
-        this_write_dir_gt_mask = Path(f"./data/ttmp_davis_tempered/gt_mask/{i}_{v_tar}")
+        this_write_dir_gt_mask = Path(
+            f"./data/ttmp_davis_tempered/gt_mask/{i}_{v_tar}"
+        )
 
         Data_dict = {}  # Data to save gt
 
@@ -95,21 +105,19 @@ if __name__ == "__main__":
         mask_folder_list = sorted(mask_folder.iterdir())
 
         while True:
-            _str = np.random.randint(0, int(len(v_tar_folder_list)*0.3)+1)
+            _str = np.random.randint(0, int(len(v_tar_folder_list) * 0.3) + 1)
             _end = np.random.randint(
-                int(len(v_tar_folder_list)*0.7),
-                len(v_tar_folder_list)
+                int(len(v_tar_folder_list) * 0.7), len(v_tar_folder_list)
             )
             if _end - _str < 80:
                 break
 
         tar_images = v_tar_folder_list[_str:_end]
-        src_images = list(zip(
-            v_src_folder_list[_str:_end],
-            mask_folder_list[_str:_end]
-        ))
+        src_images = list(
+            zip(v_src_folder_list[_str:_end], mask_folder_list[_str:_end])
+        )
 
-        offset = np.random.randint(0, int(len(tar_images)/2))
+        offset = np.random.randint(0, int(len(tar_images) / 2))
         if offset > 0:
             src_images = [(None, None)] * offset + src_images
             # first offset frame has no source
@@ -128,7 +136,7 @@ if __name__ == "__main__":
                 im_s = im_t.copy()
                 im_mask, im_mask_new = None, None
             else:
-                im_s = io.imread(src[0])
+                im_s = skimage.img_as_float(io.imread(src[0]))
                 im_mask = io.imread(src[1], as_gray=True)
                 im_mask = skimage.img_as_float(im_mask)
 
@@ -153,40 +161,52 @@ if __name__ == "__main__":
                     im_mask, im_mask_new = None, None
 
             if src[0] is not None:
-                if prev_ind == -1:
-                    ret = utils.tmp_fn_max_trans(im_mask, prev_ind, prev_scale, prev_xy)
-                    if ret is None:
-                        break
+                # if prev_ind == -1:
+                ret = utils.tmp_fn_max_trans(
+                    im_mask, prev_ind, prev_scale, prev_xy
+                )
+                if ret is None:
+                    break
+                else:
+                    translate, max_scale, centroid, mask_orig_bb = ret
+
+                    if max_scale < 0.75:
+                        translate = None
                     else:
-                        translate, scale, centroid, mask_orig_bb = ret
+                        if prev_scale == -1:
+                            scale = np.random.choice(
+                                np.linspace(0.75, min(2, max_scale), 30)
+                            )
+                        else:
+                            scale = prev_scale
+                            if scale > max_scale:
+                                break
+
                 if translate is not None:
                     prev_ind = 0
                     prev_scale = scale
 
-                    # im_mask_new = utils.patch_transform(im_mask, mask_orig_bb, centroid,
-                    #                                     translate, scale)
+                    im_mask_new = utils.patch_transform(
+                        im_mask, mask_orig_bb, centroid, translate, scale
+                    )
 
-                    im_mask_b = im_mask > 0
-                    im_mask_new = im_mask_b
+                    im_mask_bool = im_mask > 0
+                    im_s_masked = im_mask_bool[..., None] * im_s
 
-                    im_mask_bool = im_mask_b[..., None].repeat(3, 2)
-                    # im_s_masked = im_mask_bool[..., None] * im_s
-                    #
-                    tfm = skimage.transform.SimilarityTransform(
-                        translation = -translate, scale=1)
-                    im_s_tfm = skimage.transform.warp(im_s, tfm)
-                    im_mask_bool = skimage.transform.warp(im_mask_bool, tfm)
-                    im_mani = im_mask_bool * im_s_tfm + (1-im_mask_bool)*im_t
+                    im_s_n = utils.patch_transform(
+                        im_s_masked, mask_orig_bb, centroid, translate, scale
+                    )
+
                     # get manipulated image
-                    # im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
-                    im_s_new = np.zeros(im_mani.shape, dtype=np.uint8)
-                    im_s_new[im_mask>0] = (255, 0, 0)
-                    im_s_new[im_mask_bool[..., 0]>0.5] = (0, 0, 255)
-
-                    im_mask_new = im_mask_bool[..., 0] > 0.5
+                    im_mani = utils.splice(
+                        im_t, im_s_n, im_mask_new, do_blend=False
+                    )
+                    im_s_new = np.zeros(im_s_n.shape, dtype=np.float)
+                    im_s_new[im_mask > 0] = (1.0, 0, 0)
+                    im_s_new[im_mask_new > 0] = (0, 0, 1.0)
             else:
                 im_mani = im_t
-                im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
+                im_s_new = np.zeros(im_s.shape[:2], dtype=np.float)
                 im_mask, im_mask_new = None, None
 
             fname = this_write_dir / f"{counter}.png"
@@ -201,8 +221,13 @@ if __name__ == "__main__":
                 "target_image_file": tar,
                 "mask_orig": im_mask,
                 "mask_new": im_mask_new,
-                "offset": offset
+                "offset": offset,
             }
+
+        if prev_scale == -1:  # there was no forgery part
+            shutil.rmtree(this_write_dir)
+            shutil.rmtree(this_write_dir_gt_mask)
+            continue
 
         with open(this_write_data_file, "wb") as fp:
             pickle.dump(Data_dict, fp)

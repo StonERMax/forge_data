@@ -8,7 +8,6 @@ from PIL import Image
 
 from builtins import range
 import scipy.sparse
-import pyamg
 
 from poisson_edit import poisson_edit
 
@@ -18,7 +17,7 @@ def splice(img_target, img_source, img_mask, do_blend=False):
         img_target = skimage.transform.resize(
             img_target, img_mask.shape[:2], anti_aliasing=True, mode='reflect'
         )
-        img_target = skimage.img_as_ubyte(img_target)
+        # img_target = skimage.img_as_ubyte(img_target)
 
     if do_blend:
         # img_mani = poisson_edit(
@@ -35,8 +34,9 @@ def splice(img_target, img_source, img_mask, do_blend=False):
     img_mask = (img_mask > 0)
     if img_mask.dtype != np.float:
         img_mask = img_mask.astype(np.float)
+
     img_mani = img_mask * img_source + img_target * (1 - img_mask)
-    img_mani = img_mani.astype(np.uint8)
+    # img_mani = img_mani.astype(np.uint8)
 
     return img_mani
 
@@ -134,11 +134,13 @@ def tmp_fn_max_trans(mask, prev_ind=-1, prev_scale=-1, prev_xy=(None, None)):
         centroid = centroid_bb(max_bb)
         centroid_orig = centroid_bb(mask_orig_bb)
         translate = centroid - centroid_orig
-        return translate, 1, centroid
 
-    translate, scale, centroid = tmp_transform_mask(max_bb, mask_orig_bb, mask)
+        max_scale = min(np.array(wh_bb(max_bb)) / np.array(wh_bb(mask_orig_bb)))
+        return translate, max_scale, centroid
 
-    return translate, scale, centroid, mask_orig_bb
+    translate, max_scale, centroid = tmp_transform_mask(max_bb, mask_orig_bb, mask)
+
+    return translate, max_scale, centroid, mask_orig_bb
 
 
 def fn_max_trans(mask, prev_ind=-1, prev_scale=-1):
@@ -234,7 +236,8 @@ def patch_transform(im_mask, mask_bb, new_centroid, translate=None, scale=None):
 
     new_mask[topy:topy+hp, topx:topx+wp] = resized_patch
 
-    return skimage.img_as_ubyte(new_mask)
+    # return skimage.img_as_ubyte(new_mask)
+    return new_mask
 
 
 def area_bb(x):

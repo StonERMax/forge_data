@@ -6,13 +6,13 @@ if test -d data/all
 	rm -rf data/all
 end
 
-mkdir data/all
-mkdir data/all/vid
-mkdir data/all/gt_mask
-mkdir data/all/gt
+mkdir data/all_tempred
+mkdir data/all_tempred/vid
+mkdir data/all_tempred/gt_mask
+mkdir data/all_tempred/gt
 echo "created path"
 
-set data_path $PWD/data/all
+set data_path $PWD/data/all_tempred
 echo "$data_path"
 echo
 

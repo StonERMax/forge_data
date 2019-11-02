@@ -286,7 +286,7 @@ def patch_transform(im_mask, mask_bb, new_centroid, translate=None, scale=None):
     return new_mask
 
 
-def patch_transform_s(im_mask, mask_bb, new_centroid, translate=None, scale=None):
+def patch_transform_s(im_mask, mask_bb, new_centroid, translate=None, scale=None, order=0):
 
     scale = 1 if scale is None else scale
     translate = 0 if translate is None else translate
@@ -306,7 +306,7 @@ def patch_transform_s(im_mask, mask_bb, new_centroid, translate=None, scale=None
     matrix = np.matmul(matrix2, matrix1)
     tfm = skimage.transform.AffineTransform(matrix)
 
-    new_mask = skimage.transform.warp(im_mask, tfm.inverse)
+    new_mask = skimage.transform.warp(im_mask, tfm.inverse, order=order)
 
     top_left = np.array([*mask_bb[:2], 1]).reshape(3, 1)    
     bottom_right = np.array([*mask_bb[2:], 1]).reshape(3, 1)    

@@ -216,6 +216,10 @@ if __name__ == "__main__":
                     im_s_new = np.zeros(im_s_n.shape, dtype=np.float)
                     im_s_new[im_mask > 0] = (1.0, 0, 0)
                     im_s_new[im_mask_new > 0] = (0, 0, 1.0)
+                else:
+                    im_mani = im_t
+                    im_s_new = np.zeros(im_s.shape[:2], dtype=np.float)
+                    im_mask, im_mask_new = None, None
             else:
                 im_mani = im_t
                 im_s_new = np.zeros(im_s.shape[:2], dtype=np.float)

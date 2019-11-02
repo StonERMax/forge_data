@@ -105,9 +105,10 @@ if __name__ == "__main__":
         mask_folder_list = sorted(mask_folder.iterdir())
 
         while True:
-            _str = np.random.randint(0, int(len(v_tar_folder_list) * 0.3) + 1)
+            _str = np.random.randint(0, int(len(v_tar_folder_list)*0.3)+1)
             _end = np.random.randint(
-                int(len(v_tar_folder_list) * 0.7), len(v_tar_folder_list)
+                min(_str + 50, int(len(v_tar_folder_list)*0.7)),
+                min(_str+80, len(v_tar_folder_list))
             )
             if _end - _str < 80:
                 break
@@ -128,6 +129,7 @@ if __name__ == "__main__":
         prev_scale = -1
         prev_xy = (None, None)
         translate = None
+        prev_translate = None
 
         for counter, (tar, src) in enumerate(all_images):
             im_t = skimage.img_as_float(io.imread(tar))
@@ -168,12 +170,19 @@ if __name__ == "__main__":
                 if ret is None:
                     break
                 else:
-                    translate, max_scale, centroid, mask_orig_bb = ret
+                    translate, max_scale, centroid_orig, mask_orig_bb = ret
+
+                    if prev_translate is None:
+                        prev_translate = translate
+                    else:
+                        translate = prev_translate
 
                     if max_scale < 0.75:
                         translate = None
                     else:
                         if prev_scale == -1:
+
+                            # TODO: this is where you change the scale
                             scale = np.random.choice(
                                 np.linspace(0.75, min(2, max_scale), 30)
                             )
@@ -186,15 +195,18 @@ if __name__ == "__main__":
                     prev_ind = 0
                     prev_scale = scale
 
-                    im_mask_new = utils.patch_transform(
-                        im_mask, mask_orig_bb, centroid, translate, scale
+                    im_mask_new, flag = utils.patch_transform_s(
+                        im_mask, mask_orig_bb, centroid_orig, translate, scale
                     )
+
+                    if not flag:
+                        break
 
                     im_mask_bool = im_mask > 0
                     im_s_masked = im_mask_bool[..., None] * im_s
 
-                    im_s_n = utils.patch_transform(
-                        im_s_masked, mask_orig_bb, centroid, translate, scale
+                    im_s_n, _ = utils.patch_transform_s(
+                        im_s_masked, mask_orig_bb, centroid_orig, translate, scale
                     )
 
                     # get manipulated image
@@ -222,6 +234,7 @@ if __name__ == "__main__":
                 "mask_orig": im_mask,
                 "mask_new": im_mask_new,
                 "offset": offset,
+                "scale": prev_scale
             }
 
         if prev_scale == -1:  # there was no forgery part

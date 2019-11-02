@@ -143,6 +143,52 @@ def tmp_fn_max_trans(mask, prev_ind=-1, prev_scale=-1, prev_xy=(None, None)):
     return translate, max_scale, centroid, mask_orig_bb
 
 
+def tmp_fn_max_trans(mask, prev_ind=-1, prev_scale=-1, prev_xy=(None, None)):
+    h, w = mask.shape[:2]
+    m_y, m_x = np.where(mask > 0)
+    x1, x2 = np.min(m_x), np.max(m_x)
+    y1, y2 = np.min(m_y), np.max(m_y)
+
+    mask_orig_bb = (x1, y1, x2, y2)
+
+    centroid_orig = centroid_bb(mask_orig_bb)
+    BBs = [
+        (0, 0, x1, y1),
+        (x1, 0, x2, y1),
+        (x2, 0, w, y1),
+        (0, y1, x1, y2),
+        (x2, y1, w, y2),
+        (0, y2, x1, h),
+        (x1, y2, x2, h),
+        (x2, y2, w, h)
+    ]
+
+    key_BB = [(wh_bb(x)) for x in BBs]
+
+    flag_BB = [((mw>w) & (mh>h))   for mw, mh in key_BB]
+
+    cmp = [key_BB[i][0]*key_BB[i][1]  for i in range(len(flag_BB))]
+    max_ind = np.argmax(cmp)
+    max_bb = BBs[max_ind]
+
+    if cmp[max_ind] == 0:
+        return None
+
+
+    def tmp_transform_mask(max_bb, mask_orig_bb, mask):
+        centroid = centroid_bb(max_bb)
+        centroid_orig = centroid_bb(mask_orig_bb)
+        translate = centroid - centroid_orig
+
+        max_scale = min(np.array(wh_bb(max_bb)) / np.array(wh_bb(mask_orig_bb)))
+        return translate, max_scale, centroid_orig
+
+    translate, max_scale, centroid_orig = tmp_transform_mask(max_bb, mask_orig_bb, mask)
+
+    return translate, max_scale, centroid_orig, mask_orig_bb
+
+
+
 def fn_max_trans(mask, prev_ind=-1, prev_scale=-1):
     h, w = mask.shape[:2]
     m_y, m_x = np.where(mask > 0)
@@ -240,8 +286,41 @@ def patch_transform(im_mask, mask_bb, new_centroid, translate=None, scale=None):
     return new_mask
 
 
-def area_bb(x):
-    return x[0] * x[1] * x[2] * x[3]
+def patch_transform_s(im_mask, mask_bb, new_centroid, translate=None, scale=None):
+
+    scale = 1 if scale is None else scale
+    translate = 0 if translate is None else translate
+    sx, sy = scale, scale
+    x, y = centroid_bb(mask_bb)
+    matrix1 = np.array([
+        [sx, 0, x*(1-sx)],
+        [0, sy, y*(1-sy)],
+        [0, 0, 1]
+    ])
+
+    matrix2 = np.array([
+        [1, 0, translate[0]],
+        [0, 1, translate[1]],
+        [0, 0, 1]
+    ])
+    matrix = np.matmul(matrix2, matrix1)
+    tfm = skimage.transform.AffineTransform(matrix)
+
+    new_mask = skimage.transform.warp(im_mask, tfm.inverse)
+
+    top_left = np.array([*mask_bb[:2], 1]).reshape(3, 1)    
+    bottom_right = np.array([*mask_bb[2:], 1]).reshape(3, 1)    
+
+    ret1 = np.matmul(matrix, top_left)
+    ret2 = np.matmul(matrix, bottom_right)
+
+    h, w = im_mask.shape[:2]
+
+    flag = True
+    if np.any(ret1<-2) or (ret2[0]>w) or (ret2[1]>h):
+        flag = False
+    return new_mask, flag
+
 
 def centroid_bb(x):
     return np.array([int((x[0]+x[2])/2), int((x[1]+x[3])/2)])

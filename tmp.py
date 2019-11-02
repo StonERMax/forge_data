@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Arguemnt for Youtube synthetic dataset")
     parser.add_argument(
-        "--num", "-n", type=int, default=-1, help="total manipulated video"
+        "--num", "-n", type=int, default=4, help="total manipulated video"
     )
     parser.add_argument("--seed", "-s", type=int, default=0,
                         help="random seed")
@@ -47,38 +47,16 @@ if __name__ == "__main__":
     HOME = Path(os.environ["HOME"])
     root = HOME / "dataset" / "youtube_masks"
 
-    ann_path = root
-    im_root = root
-
-    all_sets = [f.name for f in ann_path.iterdir()]
-
+    ann_path = Path("tmp_dir")
+    im_root = Path("tmp_dir")
     i = 0
-    # for i in tqdm(range(args.num)):
-
-    progress = tqdm(total=args.num)
-
-    _all_sets = [f.name for f in ann_path.iterdir()]
-    all_sets = it_repeat(_all_sets)
-
-    if args.num < 0:
-        args.num = len(_all_sets)
 
     while i <= args.num:
-        v_src = next(all_sets)
-        v_tar = v_src  # Copy move, so same video
+        for tmp in range(1):
 
-        gt_str = ""
-
-        now_list = list((im_root / v_src / "data").iterdir())
-        tmp = np.random.choice(list((im_root / v_src / "data").iterdir()))
-        _num = tmp.stem
-
-        for tmp in now_list:
-            _num = tmp.stem
-
-            v_src_folder = im_root / v_src/ "data" / _num / "shots" / "001" / "images"
+            v_src_folder =  im_root / "orig" #im_root / v_src/ "data" / _num / "shots" / "001" / "images"
             v_tar_folder = v_src_folder
-            mask_folder = im_root / v_src / "data" / _num / "shots" / "001" / "labels"
+            mask_folder = im_root / "orig_mask" #im_root / v_src / "data" / _num / "shots" / "001" / "labels"
 
             print(v_src_folder)
 
@@ -101,17 +79,16 @@ if __name__ == "__main__":
             if int(len(tar_images)/2) <=0:
                 continue
 
-            offset = min(np.random.randint(0, int(len(tar_images)/2)), 5)
+            offset = np.random.randint(0, int(len(tar_images)/2))
             if offset > 0:
                 src_images = [(None, None)] * offset + src_images
                 # first offset frame has no source
 
             tmp = v_src_folder.parts
-            _flg = tmp[-6] + "_" + tmp[-4]
-            this_write_dir = Path(f"./data/tmp_youtube_tempered/vid/{i}_{_flg}")
-            this_write_data_file = Path(f"./data/tmp_youtube_tempered/gt/{i}_{_flg}.pkl")
+            this_write_dir = Path(f"./data/tmp/vid/{i}")
+            this_write_data_file = Path(f"./data/tmp/gt/{i}.pkl")
 
-            this_write_dir_gt_mask = Path(f"./data/tmp_youtube_tempered/gt_mask/{i}_{_flg}")
+            this_write_dir_gt_mask = Path(f"./data/tmp/gt_mask/{i}")
 
             Data_dict = {}  # Data to save gt
 
@@ -179,7 +156,7 @@ if __name__ == "__main__":
                         # im_s_masked = im_mask_bool[..., None] * im_s
                         #
                         tfm = skimage.transform.SimilarityTransform(
-                            translation = -translate, scale=1)
+                            translation = -translate)
                         im_s_tfm = skimage.transform.warp(im_s, tfm)
                         im_mask_bool = skimage.transform.warp(im_mask_bool, tfm)
                         im_mani = im_mask_bool * im_s_tfm + (1-im_mask_bool)*im_t
@@ -187,19 +164,17 @@ if __name__ == "__main__":
                         # im_mani = utils.splice(im_t, im_s_n, im_mask_new, do_blend=False)
                         im_s_new = np.zeros(im_mani.shape, dtype=np.uint8)
                         im_s_new[im_mask>0] = (255, 0, 0)
-                        im_s_new[im_mask_bool[..., 0]>0.5] = (0, 0, 255)
-
-                        im_mask_new = im_mask_bool[..., 0] > 0.5
+                        im_s_new[im_mask_bool[..., 0]>0] = (0, 0, 255)
                 else:
                     im_mani = im_t
                     im_s_new = np.zeros(im_s.shape[:2], dtype=np.uint8)
                     im_mask, im_mask_new = None, None
 
                 fname = this_write_dir / f"{counter:05d}.png"
-                io.imsave(fname, skimage.img_as_ubyte(im_mani))
+                io.imsave(fname, im_mani)
 
                 fname2 = this_write_dir_gt_mask / f"{counter:05d}.png"
-                io.imsave(fname2, skimage.img_as_ubyte(im_s_new))
+                io.imsave(fname2, im_s_new)
 
                 Data_dict[fname] = {
                     "source_image_file": src[0],
@@ -215,4 +190,4 @@ if __name__ == "__main__":
                     pickle.dump(Data_dict, fp)
 
         i += 1
-        progress.update()
+        print(i, ": ----")

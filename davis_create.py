@@ -70,13 +70,13 @@ if __name__ == "__main__":
 
         print(v_src)
 
-        this_write_dir = Path(f"./data/ttmp_davis_tempered/vid/{i}_{v_tar}")
+        this_write_dir = Path(f"./data/davis_same_tempered/vid/{i}_{v_tar}")
         this_write_data_file = Path(
-            f"./data/ttmp_davis_tempered/gt/{i}_{v_tar}.pkl"
+            f"./data/davis_same_tempered/gt/{i}_{v_tar}.pkl"
         )
 
         this_write_dir_gt_mask = Path(
-            f"./data/ttmp_davis_tempered/gt_mask/{i}_{v_tar}"
+            f"./data/davis_same_tempered/gt_mask/{i}_{v_tar}"
         )
 
         Data_dict = {}  # Data to save gt
@@ -130,6 +130,7 @@ if __name__ == "__main__":
         prev_xy = (None, None)
         translate = None
         prev_translate = None
+        counter_forge = 0
 
         for counter, (tar, src) in enumerate(all_images):
             im_t = skimage.img_as_float(io.imread(tar))
@@ -183,9 +184,10 @@ if __name__ == "__main__":
                         if prev_scale == -1:
 
                             # TODO: this is where you change the scale
-                            scale = np.random.choice(
-                                np.linspace(0.75, min(2, max_scale), 30)
-                            )
+                            # scale = np.random.choice(
+                            #     np.linspace(0.75, min(2, max_scale), 30)
+                            # )
+                            scale = 1.
                         else:
                             scale = prev_scale
                             if scale > max_scale:
@@ -216,6 +218,7 @@ if __name__ == "__main__":
                     im_s_new = np.zeros(im_s_n.shape, dtype=np.float)
                     im_s_new[im_mask > 0] = (1.0, 0, 0)
                     im_s_new[im_mask_new > 0] = (0, 0, 1.0)
+                    counter_forge += 1
                 else:
                     im_mani = im_t
                     im_s_new = np.zeros(im_s.shape[:2], dtype=np.float)
@@ -241,13 +244,14 @@ if __name__ == "__main__":
                 "scale": prev_scale
             }
 
-        if prev_scale == -1:  # there was no forgery part
+        if prev_scale == -1 or counter_forge < 3:  # there was no forgery part
             shutil.rmtree(this_write_dir)
             shutil.rmtree(this_write_dir_gt_mask)
             continue
 
         with open(this_write_data_file, "wb") as fp:
             pickle.dump(Data_dict, fp)
+        print(f"\t number of forged frames : {counter_forge}")
 
         try:
             del choice
